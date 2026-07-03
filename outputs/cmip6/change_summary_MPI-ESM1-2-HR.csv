@@ -1,0 +1,29 @@
+scenario,horizon,subregion,JJAS_change_pct
+ssp245,2040-2070,ALL INDIA,17.3
+ssp245,2040-2070,Arid Rajasthan,28.3
+ssp245,2040-2070,Indo-Gangetic,9.3
+ssp245,2040-2070,Northeast India,17.4
+ssp245,2040-2070,Other,20.1
+ssp245,2040-2070,Peninsular India,21.9
+ssp245,2040-2070,Western Ghats,15.1
+ssp245,2070-2100,ALL INDIA,28.0
+ssp245,2070-2100,Arid Rajasthan,43.5
+ssp245,2070-2100,Indo-Gangetic,14.6
+ssp245,2070-2100,Northeast India,19.2
+ssp245,2070-2100,Other,36.4
+ssp245,2070-2100,Peninsular India,33.2
+ssp245,2070-2100,Western Ghats,25.2
+ssp585,2040-2070,ALL INDIA,33.0
+ssp585,2040-2070,Arid Rajasthan,38.6
+ssp585,2040-2070,Indo-Gangetic,18.7
+ssp585,2040-2070,Northeast India,24.7
+ssp585,2040-2070,Other,42.0
+ssp585,2040-2070,Peninsular India,42.1
+ssp585,2040-2070,Western Ghats,29.5
+ssp585,2070-2100,ALL INDIA,82.3
+ssp585,2070-2100,Arid Rajasthan,76.2
+ssp585,2070-2100,Indo-Gangetic,36.2
+ssp585,2070-2100,Northeast India,33.2
+ssp585,2070-2100,Other,116.5
+ssp585,2070-2100,Peninsular India,138.2
+ssp585,2070-2100,Western Ghats,77.7

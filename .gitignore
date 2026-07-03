@@ -1,0 +1,14 @@
+# environments & caches
+.venv
+__pycache__/
+*.pyc
+.DS_Store
+
+# large data (documented in README; not for git)
+data
+data_cmip6/
+data_daily/
+outputs/predictions/test_predictions.parquet
+
+# large model binaries
+models/randomforest.pkl
