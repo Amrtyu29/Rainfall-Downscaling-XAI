@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Viva Cheat Sheet — Rainfall Downscaling XAI</title>
+<style>
+  :root{
+    --navy:#1E3A5F; --blue:#1E40AF; --teal:#0F766E; --amber:#B45309;
+    --purple:#6D28D9; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --bg-blue:#eff4ff; --bg-teal:#e7f6f3; --bg-amber:#fdf3e7; --bg-purple:#f3edfd;
+    --bg-gray:#f8fafc;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#fff; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .page{width:210mm; min-height:297mm; padding:9mm 9mm 7mm; margin:0 auto;}
+  @page{ size:A4 portrait; margin:0; }
+
+  h1{font-size:16.5px; color:var(--navy); letter-spacing:-.2px;}
+  .sub{font-size:9px; color:var(--muted); margin-top:1px;}
+  .opener{font-size:9.3px; color:#111827; background:#fffbeb; border:1px solid #fde68a;
+    border-left:4px solid #f59e0b; padding:5px 8px; border-radius:5px; margin-top:6px; line-height:1.35;}
+  .opener b{color:#92400e;}
+
+  .row{display:grid; gap:6px; margin-top:7px;}
+  .r3{grid-template-columns:1fr 1fr 1fr;}
+  .r2{grid-template-columns:1.05fr .95fr;}
+
+  .card{border:1px solid var(--line); border-radius:6px; padding:6px 8px; line-height:1.3;}
+  .card h3{font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; margin-bottom:3px; display:flex; align-items:center; gap:5px;}
+  .tag{display:inline-block; font-size:7.5px; font-weight:700; color:#fff; padding:1px 5px; border-radius:20px;}
+  .p1 h3{color:var(--blue);} .p1{background:var(--bg-blue);} .p1 .tag{background:var(--blue);}
+  .p2 h3{color:var(--teal);} .p2{background:var(--bg-teal);} .p2 .tag{background:var(--teal);}
+  .p3 h3{color:var(--purple);} .p3{background:var(--bg-purple);} .p3 .tag{background:var(--purple);}
+  .card p{font-size:8.6px; margin:2px 0;}
+  .card .res{font-size:8.8px; background:#fff; border:1px dashed #cbd5e1; border-radius:4px; padding:3px 5px; margin-top:3px;}
+  .card .res b{color:var(--navy);}
+  .say{font-size:8.2px; font-style:italic; color:#374151; margin-top:3px;}
+  .say::before{content:"🗣 "; font-style:normal;}
+
+  .numbers{margin-top:7px; background:var(--navy); border-radius:6px; padding:6px 9px; color:#fff;}
+  .numbers h3{font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:#cfe0ff; margin-bottom:4px;}
+  .ngrid{display:grid; grid-template-columns:repeat(5,1fr); gap:6px;}
+  .num{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:5px; padding:4px 6px;}
+  .num .v{font-size:13px; font-weight:800; color:#fff; line-height:1;}
+  .num .k{font-size:7.4px; color:#c7d2fe; margin-top:2px; line-height:1.2;}
+
+  .sec{border:1px solid var(--line); border-radius:6px; padding:6px 8px;}
+  .sec h3{font-size:9.5px; color:var(--navy); text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px;}
+  ol.firsts{margin-left:14px;} ol.firsts li{font-size:8.6px; margin:2.5px 0; line-height:1.3;}
+  .firsts b{color:var(--amber);}
+  .warn{font-size:8.2px; color:#7c2d12; background:var(--bg-amber); border-radius:4px; padding:3px 6px; margin-top:4px; line-height:1.3;}
+
+  .qa{font-size:8.4px; line-height:1.32;}
+  .qa .q{color:var(--navy); font-weight:700; margin-top:4px;}
+  .qa .q:first-child{margin-top:0;}
+  .qa .a{color:#374151;}
+  .qa .a::before{content:"→ "; color:var(--teal); font-weight:700;}
+
+  .storyline{font-size:8.2px; color:var(--muted); text-align:center; margin-top:7px;}
+  .storyline b{color:var(--navy);}
+  .foot{display:flex; justify-content:space-between; font-size:7.4px; color:#9ca3af; margin-top:6px; border-top:1px solid var(--line); padding-top:4px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid var(--navy); padding-bottom:5px;">
+    <div>
+      <h1>Downscaling Rainfall over India using Explainable AI (XAI)</h1>
+      <div class="sub">Viva cheat sheet · Academic Year 2025–26 · ERA5 → IMD 0.25° rainfall · SHAP explainability + CMIP6 future + extremes</div>
+    </div>
+    <div style="text-align:right; font-size:7.5px; color:var(--muted);">github.com/Amrtyu29/<br><b>Rainfall-Downscaling-XAI</b></div>
+  </div>
+
+  <div class="opener">
+    <b>Open with:</b> “I built an ML system that turns coarse climate data into high-resolution rainfall maps for India — and it <b>explains its own predictions</b> with SHAP. I then extended it to two things never done for India: explaining <b>future</b> rainfall change, and explaining what drives <b>flood-level</b> days.”
+  </div>
+
+  <!-- THREE PARTS -->
+  <div class="row r3">
+    <div class="card p1">
+      <h3><span class="tag">PART 1</span> Downscale + Explain</h3>
+      <p><b>Do:</b> 7 ERA5 predictors (humidity, wind, pressure, temp) → IMD rainfall at 0.25°, 1980–2023. “Point-to-pixel”: each month×cell = 1 row (~9M rows). Compared 4 models.</p>
+      <div class="res"><b>Result:</b> LightGBM <b>R²=0.73</b> vs linear 0.21 → ML ~<b>triples</b> the skill.</div>
+      <div class="res"><b>SHAP:</b> humidity drives rain everywhere; model learned real physics — even cyclones on the Odisha coast, on its own.</div>
+      <div class="say">“Not just accurate — SHAP proves it learned the monsoon’s physics, so we can trust it.”</div>
+    </div>
+
+    <div class="card p2">
+      <h3><span class="tag">PART 2 · NOVEL</span> Future (CMIP6)</h3>
+      <p><b>Do:</b> feed the trained model bias-corrected future climate (2 GCMs, scenarios SSP2-4.5 & SSP5-8.5).</p>
+      <p><b>Proof it’s valid:</b> driven by past climate data it reproduces the real monsoon — <b>r=0.965</b>, bias <b>+3.6%</b>.</p>
+      <div class="res"><b>Result:</b> monsoon gets <b>wetter, +17% to +49%</b> (2040–70). Both GCMs agree.</div>
+      <div class="res"><b>Why (SHAP):</b> rising <b>humidity</b> drives it; temp/pressure oppose weakly → “moistening beats weakening.”</div>
+      <div class="say">“Most studies just report the change — we’re first to explain WHY, region by region.”</div>
+    </div>
+
+    <div class="card p3">
+      <h3><span class="tag">PART 3 · NOVEL</span> Flood Days</h3>
+      <p><b>Do:</b> switch to daily data. Predict flood-level days (<b>≥64.5 mm/day</b>) from large-scale fields with an XGBoost classifier.</p>
+      <div class="res"><b>Result:</b> <b>ROC-AUC 0.86</b> on unseen years (heavy days only 1.5% → ~10× over chance).</div>
+      <div class="res"><b>Mechanism switch:</b> totals = <b>humidity</b>; floods = <b>500 hPa circulation</b> (monsoon depressions), NOT humidity.</div>
+      <div class="say">“Thermodynamics sets the stage, but dynamics delivers the flood.”</div>
+    </div>
+  </div>
+
+  <!-- NUMBERS -->
+  <div class="numbers">
+    <h3>🔢 Numbers to say with confidence</h3>
+    <div class="ngrid">
+      <div class="num"><div class="v">0.73 / 0.21</div><div class="k">R² LightGBM vs linear (~3×)</div></div>
+      <div class="num"><div class="v">7 · 9M</div><div class="k">predictors · training rows</div></div>
+      <div class="num"><div class="v">r = 0.965</div><div class="k">future-chain validation (+3.6% bias)</div></div>
+      <div class="num"><div class="v">+17–49%</div><div class="k">monsoon by 2040–70 (humidity-driven)</div></div>
+      <div class="num"><div class="v">AUC 0.86</div><div class="k">floods ≥64.5mm/day (z500-driven)</div></div>
+    </div>
+  </div>
+
+  <!-- NOVELTY + LIMITATIONS  |  Q&A -->
+  <div class="row r2">
+    <div class="sec">
+      <h3>🏆 What’s original (3 “firsts for India”)</h3>
+      <ol class="firsts">
+        <li>First <b>seasonal + regional SHAP driver analysis</b> of downscaled rainfall for India.</li>
+        <li>First <b>SHAP explanation of future rainfall change</b> over India.</li>
+        <li>First <b>SHAP attribution of daily extreme-rain drivers</b> over India.</li>
+      </ol>
+      <div class="warn"><b>Be honest (examiners like this):</b> stationarity assumption (learned relation held into a warmer climate); far-future SSP5-8.5 numbers are upper-end (humidity beyond training range); only 2 GCMs; these are scenarios, not forecasts.</div>
+    </div>
+
+    <div class="sec">
+      <h3>💬 If sir asks…</h3>
+      <div class="qa">
+        <div class="q">Why test on 2016–2023?</div>
+        <div class="a">Split by time, not randomly — tested on years never seen, so no leakage/cheating.</div>
+        <div class="q">LightGBM best, but SHAP on XGBoost — why?</div>
+        <div class="a">Skill is near-identical; XGBoost gives exact, fast TreeSHAP explanations.</div>
+        <div class="q">Isn’t this the China/Turkey paper?</div>
+        <div class="a">Same idea, first for India — plus future projections & extremes, which they never did.</div>
+        <div class="q">How do you trust the future run?</div>
+        <div class="a">The r=0.965 historical validation licenses it before extrapolating.</div>
+        <div class="q">Why does the monsoon get wetter?</div>
+        <div class="a">Warmer air holds more moisture (Clausius–Clapeyron); SHAP confirms humidity is the driver.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="storyline">
+    Story arc to keep in mind: &nbsp; <b>Problem</b> (coarse data) → <b>Gap</b> (no explainable downscaling for India) → <b>Part 1</b> accurate + explained → <b>Part 2</b> explained future → <b>Part 3</b> explained floods → <b>3 firsts</b>, honest limits.
+  </div>
+
+  <div class="foot">
+    <span>Downscaling Rainfall over India using Explainable AI · Final Project Report 2025–26</span>
+    <span>Tip: keep this open on a second screen / phone during the call.</span>
+  </div>
+
+</div>
+</body>
+</html>

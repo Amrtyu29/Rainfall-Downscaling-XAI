@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "rainfall-dashboard",
-      "runtimeExecutable": "/Users/admin/Desktop/Rainfall_Downscaling_XAI/.venv/bin/streamlit",
-      "runtimeArgs": ["run", "/Users/admin/Desktop/Rainfall_Downscaling_XAI/dashboard/app.py", "--server.headless", "true", "--server.port", "8501"],
+      "runtimeExecutable": "/Users/admin/Desktop/Rainfall_Downscaling_XAI/.venv/bin/python3",
+      "runtimeArgs": ["-m", "streamlit", "run", "/Users/admin/Desktop/Rainfall_Downscaling_XAI/dashboard/app.py", "--server.headless", "true", "--server.port", "8501"],
       "port": 8501
     }
   ]

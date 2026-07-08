@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Models, Variables & Map Workflow — Rainfall Downscaling XAI</title>
+<style>
+  :root{
+    --navy:#1E3A5F; --blue:#1E40AF; --teal:#0F766E; --amber:#B45309;
+    --purple:#6D28D9; --green:#047857; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --bg-blue:#eff4ff; --bg-teal:#e7f6f3; --bg-amber:#fdf3e7; --bg-purple:#f3edfd; --bg-gray:#f8fafc;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#fff; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .page{width:210mm; min-height:297mm; padding:9mm 9mm 7mm; margin:0 auto;}
+  @page{ size:A4 portrait; margin:0; }
+
+  .head{display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom:2px solid var(--navy); padding-bottom:5px;}
+  h1{font-size:15.5px; color:var(--navy);}
+  .sub{font-size:8.6px; color:var(--muted); margin-top:1px;}
+
+  h2{font-size:10px; color:var(--navy); text-transform:uppercase; letter-spacing:.4px;
+    margin:8px 0 4px; display:flex; align-items:center; gap:6px;}
+  h2 .n{background:var(--navy); color:#fff; width:15px; height:15px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:9px; font-weight:800;}
+
+  /* variable chips */
+  .vars{display:grid; grid-template-columns:repeat(4,1fr); gap:5px;}
+  .vc{border:1px solid var(--line); border-radius:5px; padding:4px 7px; background:var(--bg-gray);}
+  .vc b{font-size:9.5px; color:var(--blue); font-family:ui-monospace,Menlo,monospace;}
+  .vc span{display:block; font-size:7.7px; color:#374151; line-height:1.25; margin-top:1px;}
+  .vc.helper b{color:var(--muted);}
+  .eq{font-size:8.6px; color:#111827; background:#fffbeb; border:1px solid #fde68a;
+    border-radius:5px; padding:4px 8px; margin-top:5px;}
+  .eq b{color:#92400e;}
+
+  /* models table */
+  table{width:100%; border-collapse:collapse; margin-top:3px; font-size:8.3px;}
+  th{background:var(--navy); color:#fff; text-align:left; padding:4px 6px; font-size:8px;
+    text-transform:uppercase; letter-spacing:.3px;}
+  td{border:1px solid var(--line); padding:4px 6px; vertical-align:top; line-height:1.28;}
+  tr:nth-child(even) td{background:var(--bg-gray);}
+  td .m{font-weight:700; color:var(--ink);}
+  code{font-family:ui-monospace,Menlo,monospace; font-size:7.8px; background:#eef2f7;
+    padding:0 3px; border-radius:3px; color:var(--navy);}
+  .pill{display:inline-block; font-size:7px; font-weight:700; color:#fff; padding:1px 5px; border-radius:20px;}
+  .p-reg{background:var(--blue);} .p-cls{background:var(--purple);} .p-none{background:var(--green);} .p-shap{background:var(--amber);}
+
+  /* map workflow */
+  .flow{display:grid; grid-template-columns:repeat(6,1fr); gap:5px; margin-top:4px; align-items:stretch;}
+  .fstep{position:relative; border:1px solid var(--line); border-left:3px solid var(--teal);
+    border-radius:5px; padding:5px 6px 6px; background:var(--bg-teal);}
+  .fstep .fn{font-size:7px; font-weight:800; color:var(--teal);}
+  .fstep h4{font-size:8.4px; color:var(--ink); margin:1px 0 2px;}
+  .fstep p{font-size:7.4px; color:#374151; line-height:1.25;}
+  .fstep code{font-size:7px;}
+  .fstep .arr{position:absolute; right:-9px; top:50%; transform:translateY(-50%);
+    color:var(--teal); font-size:13px; font-weight:900; z-index:2;}
+  .fstep:last-child .arr{display:none;}
+
+  .mono{font-size:8px; color:var(--muted); margin-top:5px; text-align:center;}
+  .mono b{color:var(--navy);}
+  .foot{display:flex; justify-content:space-between; font-size:7.3px; color:#9ca3af;
+    margin-top:7px; border-top:1px solid var(--line); padding-top:4px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div>
+      <h1>Models, Variables &amp; Map Workflow</h1>
+      <div class="sub">Downscaling Rainfall over India using XAI · which variables each model uses, and how every map is built</div>
+    </div>
+    <div style="text-align:right; font-size:7.5px; color:var(--muted);">One physical basis ·<br>7 predictors, shared</div>
+  </div>
+
+  <!-- VARIABLES -->
+  <h2><span class="n">1</span> The variables — 7 physical predictors + 4 helpers (same everywhere)</h2>
+  <div class="vars">
+    <div class="vc"><b>q850</b><span>Specific humidity @850 hPa — moisture amount</span></div>
+    <div class="vc"><b>rh850</b><span>Relative humidity @850 hPa — nearness to saturation</span></div>
+    <div class="vc"><b>u850</b><span>Zonal (E–W) wind @850 hPa — moisture transport</span></div>
+    <div class="vc"><b>v850</b><span>Meridional (N–S) wind @850 hPa — transport</span></div>
+    <div class="vc"><b>z500</b><span>Geopotential height @500 hPa — mid-level circulation</span></div>
+    <div class="vc"><b>mslp</b><span>Mean sea-level pressure — weather systems</span></div>
+    <div class="vc"><b>t2m</b><span>2-metre temperature — thermodynamic state</span></div>
+    <div class="vc helper"><b>lat, lon</b><span>Location — <i>where</i> the grid cell is</span></div>
+    <div class="vc helper"><b>month_sin</b><span>Cyclic month encoding — <i>when</i> (season)</span></div>
+    <div class="vc helper"><b>month_cos</b><span>Cyclic month encoding — <i>when</i> (season)</span></div>
+  </div>
+  <div class="eq"><b>FEATURES = 7 predictors + lat + lon + month_sin + month_cos = 11 inputs</b> &nbsp;→&nbsp; target = IMD rainfall &nbsp;(<code>config.py</code>)</div>
+
+  <!-- MODELS TABLE -->
+  <h2><span class="n">2</span> What each model uses</h2>
+  <table>
+    <tr><th style="width:20%">Model / step</th><th style="width:20%">Predicts (target)</th><th style="width:31%">Input variables</th><th style="width:17%">Data</th><th style="width:12%">Type</th></tr>
+    <tr>
+      <td><span class="m">Downscaling × 4</span><br>Linear · RandomForest · XGBoost · LightGBM</td>
+      <td>Monthly rainfall (mm/month)</td>
+      <td>The <b>11 features</b> — <code>q850 rh850 u850 v850 z500 mslp t2m</code> + <code>lat lon month_sin month_cos</code></td>
+      <td>ERA5 → IMD, monthly 1980–2023</td>
+      <td><span class="pill p-reg">regression</span></td>
+    </tr>
+    <tr>
+      <td><span class="m">SHAP explainer</span></td>
+      <td><i>Explains</i> the XGBoost downscaler</td>
+      <td>Same 11 features (attributes each prediction to them)</td>
+      <td>—</td>
+      <td><span class="pill p-shap">TreeSHAP</span></td>
+    </tr>
+    <tr>
+      <td><span class="m">CMIP6 future</span></td>
+      <td>Future monthly rainfall</td>
+      <td>Same 7 predictors — <b>bias-corrected GCM</b> version — + <code>lat lon month</code></td>
+      <td>MPI-ESM1-2-HR, EC-Earth3 (SSP2-4.5 / SSP5-8.5)</td>
+      <td><span class="pill p-reg">same model</span></td>
+    </tr>
+    <tr>
+      <td><span class="m">Extreme-day classifier</span></td>
+      <td>Heavy day yes / no (<b>≥ 64.5 mm/day</b>)</td>
+      <td>Same 7 predictors — <b>daily NCEP</b> — + <code>lat lon month_sin month_cos</code></td>
+      <td>NCEP → IMD daily, JJAS 2000–2023</td>
+      <td><span class="pill p-cls">XGBoost classifier</span></td>
+    </tr>
+    <tr>
+      <td><span class="m">ETCCDI indices</span><br>PRCPTOT, RX1day, R95p, CDD …</td>
+      <td>Index value per cell / year</td>
+      <td><b>No predictors</b> — computed directly from daily rainfall</td>
+      <td>IMD daily 1980–2023</td>
+      <td><span class="pill p-none">formula</span></td>
+    </tr>
+  </table>
+  <div class="mono">All ML models share the <b>same 7-predictor physical basis</b> — only the data changes (ERA5 monthly → GCM future → NCEP daily). The <b>ETCCDI indices use no predictors</b>.</div>
+
+  <!-- MAP WORKFLOW -->
+  <h2><span class="n">3</span> How every map is built — one shared engine (<code>mapstyle.py</code>)</h2>
+  <div class="flow">
+    <div class="fstep"><div class="fn">STEP 1</div><h4>Value per cell</h4><p>Model prediction, mean-|SHAP| driver, % change, or index — one number for every grid cell.</p><span class="arr">›</span></div>
+    <div class="fstep"><div class="fn">STEP 2</div><h4>Grid it</h4><p>Reshape the values into a <b>lat × lon</b> table (pivot).</p><span class="arr">›</span></div>
+    <div class="fstep"><div class="fn">STEP 3</div><h4>India axes</h4><p><code>india_axes</code> — a cartopy map cropped to India.</p><span class="arr">›</span></div>
+    <div class="fstep"><div class="fn">STEP 4</div><h4>Colour field</h4><p><code>field</code> — smooth shading, <b>clipped to India's outline</b>.</p><span class="arr">›</span></div>
+    <div class="fstep"><div class="fn">STEP 5</div><h4>Borders + bar</h4><p><code>draw_boundaries</code> — state borders, gridlines, colour bar, title.</p><span class="arr">›</span></div>
+    <div class="fstep"><div class="fn">STEP 6</div><h4>Export</h4><p>PNG at 300 dpi (report). Dashboard wraps it in a <b>zoomable</b> canvas.</p></div>
+  </div>
+  <div class="mono">Same engine for <b>every</b> map type — observed rainfall · model prediction · difference · SHAP driver · CMIP6 change · ETCCDI index. Only the <b>values</b> and the <b>colour scale</b> differ.</div>
+
+  <div class="foot">
+    <span>Downscaling Rainfall over India using XAI · variables &amp; map workflow · Academic Year 2025–26</span>
+    <span>Print: ⌘P → one A4 page</span>
+  </div>
+
+</div>
+</body>
+</html>

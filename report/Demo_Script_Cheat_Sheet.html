@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Live Demo Script — Rainfall Downscaling XAI Dashboard</title>
+<style>
+  :root{
+    --navy:#1E3A5F; --blue:#1E40AF; --teal:#0F766E; --amber:#B45309;
+    --purple:#6D28D9; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --bg-blue:#eff4ff; --bg-teal:#e7f6f3; --bg-amber:#fdf3e7; --bg-purple:#f3edfd; --bg-navy:#eef2f7;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#fff; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .page{width:210mm; min-height:297mm; padding:9mm 9mm 7mm; margin:0 auto;}
+  @page{ size:A4 portrait; margin:0; }
+
+  .head{display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom:2px solid var(--navy); padding-bottom:5px;}
+  h1{font-size:16px; color:var(--navy); letter-spacing:-.2px;}
+  .sub{font-size:9px; color:var(--muted); margin-top:1px;}
+  .url{text-align:right; font-size:8px; color:var(--muted);}
+  .url b{color:var(--blue); font-size:10px;}
+
+  .prep{font-size:8.4px; color:#374151; background:var(--bg-navy); border:1px solid #d5deea;
+    border-radius:5px; padding:5px 9px; margin-top:6px; line-height:1.35;}
+  .prep b{color:var(--navy);}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px;}
+
+  .step{border:1px solid var(--line); border-left-width:4px; border-radius:6px;
+    padding:6px 9px 7px; line-height:1.3; break-inside:avoid;}
+  .step .top{display:flex; align-items:center; gap:6px; margin-bottom:3px;}
+  .badge{display:inline-flex; align-items:center; justify-content:center;
+    width:16px; height:16px; border-radius:50%; color:#fff; font-size:9px; font-weight:800; flex:none;}
+  .step h3{font-size:9.6px; text-transform:uppercase; letter-spacing:.2px;}
+  .tab{font-size:7.3px; font-weight:700; color:#fff; padding:1px 5px; border-radius:20px; margin-left:auto;}
+  .do{font-size:8.4px; margin:2px 0;}
+  .do b{color:var(--navy);}
+  .chk{font-size:8.2px; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0;
+    border-radius:4px; padding:2px 6px; margin:3px 0; display:block;}
+  .chk::before{content:"✓ "; font-weight:800;}
+  .say{font-size:8.3px; font-style:italic; color:#111827; background:#fff;
+    border:1px dashed #cbd5e1; border-radius:4px; padding:3px 6px; margin-top:3px; line-height:1.32;}
+  .say::before{content:"🗣 "; font-style:normal;}
+  .kbd{font-family:ui-monospace,Menlo,monospace; font-size:7.6px; background:#f1f5f9;
+    border:1px solid #e2e8f0; border-radius:3px; padding:0 4px;}
+
+  /* colour themes */
+  .c-navy{border-left-color:var(--navy);} .c-navy .badge{background:var(--navy);} .c-navy h3{color:var(--navy);} .c-navy .tab{background:var(--navy);}
+  .c-blue{border-left-color:var(--blue); background:var(--bg-blue);} .c-blue .badge{background:var(--blue);} .c-blue h3{color:var(--blue);} .c-blue .tab{background:var(--blue);}
+  .c-purple{border-left-color:var(--purple); background:var(--bg-purple);} .c-purple .badge{background:var(--purple);} .c-purple h3{color:var(--purple);} .c-purple .tab{background:var(--purple);}
+  .c-teal{border-left-color:var(--teal); background:var(--bg-teal);} .c-teal .badge{background:var(--teal);} .c-teal h3{color:var(--teal);} .c-teal .tab{background:var(--teal);}
+  .c-amber{border-left-color:var(--amber); background:var(--bg-amber);} .c-amber .badge{background:var(--amber);} .c-amber h3{color:var(--amber);} .c-amber .tab{background:var(--amber);}
+
+  .close{margin-top:6px; background:var(--navy); color:#fff; border-radius:6px; padding:6px 10px;}
+  .close h3{font-size:9.5px; color:#cfe0ff; text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px;}
+  .close p{font-size:8.6px; line-height:1.35;}
+  .close .lim{font-size:7.9px; color:#c7d2fe; margin-top:3px;}
+
+  .foot{display:flex; justify-content:space-between; font-size:7.4px; color:#9ca3af;
+    margin-top:6px; border-top:1px solid var(--line); padding-top:4px;}
+  .time{font-weight:700; color:var(--teal);}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div>
+      <h1>Live Demo Script — Dashboard Walkthrough</h1>
+      <div class="sub">Downscaling Rainfall over India using XAI · click-by-click, with the line to say at each step · target ≈ 4 min</div>
+    </div>
+    <div class="url">Dashboard running at<br><b>127.0.0.1:8501</b></div>
+  </div>
+
+  <div class="prep">
+    <b>Before you start:</b> confirm the app is running (green in the terminal), open <span class="kbd">127.0.0.1:8501</span> in the browser, and <b>share your screen</b>. Keep cheat-sheet&nbsp;#1 on your phone. First click on each tab may take ~2&nbsp;s while it caches — that's normal, just pause.
+  </div>
+
+  <div class="grid">
+
+    <!-- STEP 1 -->
+    <div class="step c-navy">
+      <div class="top"><span class="badge">1</span><h3>Set the scene</h3><span class="tab">TOP OF PAGE</span></div>
+      <div class="do"><b>Point at</b> the four big cards along the top.</div>
+      <div class="say">“These four numbers are the whole project in one line — accuracy R²&nbsp;0.73, the future-validation r&nbsp;0.965, the projected monsoon rise, and flood detection 0.86. Let me show how each one is produced.”</div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step c-blue">
+      <div class="top"><span class="badge">2</span><h3>Show it works</h3><span class="tab">TAB 1 · EXPLORE</span></div>
+      <div class="do"><b>Set:</b> Year slider → <span class="kbd">2020</span> · Month → <span class="kbd">July</span> · View → <span class="kbd">Observed vs Model</span>.</div>
+      <span class="chk">Green pill shows “Test period — unseen by the model”.</span>
+      <div class="say">“July 2020 — a monsoon month the model never saw in training. Left is the real IMD rainfall, right is my model’s output. They’re almost identical — that’s the skill.”</div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step c-blue">
+      <div class="top"><span class="badge">3</span><h3>Zoom & error map</h3><span class="tab">TAB 1 · EXPLORE</span></div>
+      <div class="do"><b>Do:</b> hover a map → use the top-right toolbar to box-zoom the Western Ghats (or scroll to zoom). Then switch View → <span class="kbd">Difference</span>.</div>
+      <div class="say">“Same publication-quality maps as my report, fully zoomable. In the difference map, pale means small error — blue is slightly too wet, red slightly too dry.”</div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step c-purple">
+      <div class="top"><span class="badge">4</span><h3>Explain WHY (novelty 1)</h3><span class="tab">TAB 2 · DRIVERS</span></div>
+      <div class="do"><b>Point at</b> the India driver map. <b>Pick</b> a sub-region (e.g. Indo-Gangetic). <b>Glance</b> at “Driver importance by season”.</div>
+      <div class="say">“Here’s the first novelty. SHAP shows humidity controls rainfall everywhere — this map gives the top driver for every grid cell, strongest during the monsoon.”</div>
+      <div class="do" style="margin-top:3px;"><b>Open</b> “Secondary drivers”.</div>
+      <div class="say">“After humidity, the model found temperature in the Himalaya and pressure near the Odisha coast — it discovered cyclones on its own.”</div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step c-teal">
+      <div class="top"><span class="badge">5</span><h3>The future (novelty 2)</h3><span class="tab">TAB 3 · FUTURE</span></div>
+      <div class="do"><b>Set:</b> Model → <span class="kbd">MPI-ESM1-2-HR</span> · Scenario → <span class="kbd">SSP5-8.5</span> · Horizon → <span class="kbd">2070-2100</span>.</div>
+      <div class="say">“Now the future. Green = wetter — the monsoon intensifies. The bar chart breaks the change down by region.”</div>
+      <div class="do" style="margin-top:3px;"><b>Open</b> “Why does the monsoon get wetter?”</div>
+      <div class="say">“And I can explain WHY — rising humidity drives it. Second novelty: explaining the change, not just reporting it. (These far-future high-emission numbers are upper-end — I note that honestly.)”</div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="step c-amber">
+      <div class="top"><span class="badge">6</span><h3>Floods (novelty 3)</h3><span class="tab">TAB 4 · EXTREMES</span></div>
+      <div class="do"><b>Point at</b> ROC-AUC <span class="kbd">0.862</span> and the “mechanism switch” table. <b>Show</b> the heavy-rain driver map.</div>
+      <div class="say">“Finally, floods. I detect flood-level days (≥64.5 mm/day) at 0.86 AUC. The key finding: extremes are driven by circulation, not humidity. Thermodynamics sets the stage — dynamics delivers the flood.”</div>
+    </div>
+
+  </div>
+
+  <!-- CLOSE -->
+  <div class="close">
+    <h3>Close the demo (say this)</h3>
+    <p>“So the system is accurate, it explains itself, and it delivers three firsts for India — explained downscaling, explained future rainfall change, and explained extremes. All numbers you saw are from held-out years the model never trained on.”</p>
+    <div class="lim"><b>If asked about limits:</b> two climate models (one member each) and the stationarity assumption — I state both openly; a full ensemble is future work.</div>
+  </div>
+
+  <div class="foot">
+    <span>Recovery: if a map stalls it’s first-load caching — wait 2 s. If the page disconnects, refresh the browser (⌘R).</span>
+    <span class="time">≈ 4 minutes total · demo then invite questions</span>
+  </div>
+
+</div>
+</body>
+</html>

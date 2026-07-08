@@ -260,6 +260,95 @@ def render_change_png(gcm: str, ssp: str, hz: str) -> bytes:
     return _fig_png(fig)
 
 
+# ---- ETCCDI extreme-rainfall indices (standard WMO/RClimDex; guide-requested) ----
+OUT_IDX = ROOT / "outputs" / "extremes" / "indices"
+
+INDEX_META = {
+    "PRCPTOT": ("Annual wet-day total (PRCPTOT)", "mm", "YlGnBu",
+                "Total rain on wet days (≥1 mm) each year — overall wetness."),
+    "RX1day": ("Max 1-day rain (RX1day)", "mm", "YlGnBu",
+               "Wettest single day of the year — flash-flood intensity."),
+    "Rx5day": ("Max 5-day rain (Rx5day)", "mm", "YlGnBu",
+               "Wettest 5 consecutive days — river-flood intensity."),
+    "R95p": ("Very wet-day total (R95p)", "mm", "YlGnBu",
+             "Rain falling on days above the local 95th percentile."),
+    "R99p": ("Extremely wet-day total (R99p)", "mm", "YlGnBu",
+             "Rain falling on days above the local 99th percentile."),
+    "R20": ("Very heavy days ≥20 mm (R20)", "days", "viridis",
+            "Number of very heavy rain days per year."),
+    "R10": ("Heavy days ≥10 mm (R10)", "days", "viridis",
+            "Number of heavy rain days per year."),
+    "CDD": ("Consecutive dry days (CDD)", "days", "YlOrRd",
+            "Longest dry spell (rain <1 mm) — drought indicator."),
+    "CWD": ("Consecutive wet days (CWD)", "days", "GnBu",
+            "Longest wet spell (rain ≥1 mm)."),
+    "SDII": ("Daily intensity (SDII)", "mm/day", "YlGnBu",
+             "Average rain per wet day — rainfall ‘punchiness’."),
+}
+
+
+@st.cache_resource
+def load_indices():
+    # decode_timedelta=False: CDD/CWD/R10/R20 have units="days", which xarray's
+    # CF decoding would otherwise turn into timedelta64 and break rendering.
+    return xr.open_dataset(OUT_IDX / "etccdi_indices_annual.nc",
+                           decode_timedelta=False).load()
+
+
+@st.cache_data
+def index_series():
+    return pd.read_csv(OUT_IDX / "etccdi_annual_series.csv", index_col="year")
+
+
+@st.cache_data
+def index_trends():
+    return pd.read_csv(OUT_IDX / "etccdi_trends.csv", index_col="index")
+
+
+@st.cache_data
+def index_trend_field(index):
+    """Per-cell OLS slope per decade (vectorised)."""
+    ds = load_indices()
+    yr = ds["year"].values.astype(float)
+    yrc = yr - yr.mean()
+    x = ds[index].values
+    denom = float((yrc ** 2).sum())
+    slope = np.nansum(yrc[:, None, None] * (x - np.nanmean(x, axis=0)[None]),
+                      axis=0) / denom
+    slope[np.all(~np.isfinite(x), axis=0)] = np.nan
+    return slope * 10.0
+
+
+@st.cache_data(show_spinner="Rendering index map …")
+def render_index_png(index, view, year):
+    """Publication-style ETCCDI index map (climatology / single year / trend)."""
+    ds = load_indices()
+    ln, un, cmap, _ = INDEX_META[index]
+    short = ln.split("(")[0].strip()
+    yr0, yr1 = int(ds.year.min()), int(ds.year.max())
+    if view == "Trend (per decade)":
+        arr = index_trend_field(index)
+        lim = float(np.nanpercentile(np.abs(arr), 96)) or 1.0
+        vmin, vmax, cmap = -lim, lim, "RdBu"
+        title, cbar = f"{index} trend — {yr0}–{yr1}", f"{un} / decade"
+    else:
+        if view == "Single year":
+            arr = ds[index].sel(year=int(year)).values
+            title = f"{index} — {short} · {int(year)}"
+        else:
+            arr = ds[index].mean("year").values
+            title = f"{index} — {short} · {yr0}–{yr1} mean"
+        vmin, vmax = np.nanpercentile(arr, [2, 98])
+        cbar = un
+    piv = xr.DataArray(arr, coords={"lat": ds.lat, "lon": ds.lon},
+                       dims=["lat", "lon"]).to_pandas()
+    fig = plt.figure(figsize=(9.5, 8))
+    ax = M.india_axes(fig)
+    mesh = M.field(ax, piv, cmap=cmap, vmin=vmin, vmax=vmax)
+    M.finish_map(ax, mesh, title, cbar)
+    return _fig_png(fig)
+
+
 def card_caption(text):
     st.markdown(f"<p style='color:{MUTED}; font-size:0.86rem; margin-top:-6px'>{text}</p>",
                 unsafe_allow_html=True)
@@ -468,12 +557,16 @@ with tab3:
 
 # ------------------------------------------------------------------- tab 4 --
 with tab4:
-    l, r = st.columns([1, 1.25], gap="large")
-    with l:
-        e1, e2 = st.columns(2)
-        e1.metric("ROC-AUC — unseen years", "0.862")
-        e2.metric("Vs chance", "10×", help="PR-AUC 0.161 against a 1.54% base rate")
-        st.markdown("""
+    sub = st.radio("Extremes view", ["Flood-day drivers", "ETCCDI extreme indices"],
+                   horizontal=True, label_visibility="collapsed")
+
+    if sub == "Flood-day drivers":
+        l, r = st.columns([1, 1.25], gap="large")
+        with l:
+            e1, e2 = st.columns(2)
+            e1.metric("ROC-AUC — unseen years", "0.862")
+            e2.metric("Vs chance", "10×", help="PR-AUC 0.161 against a 1.54% base rate")
+            st.markdown("""
 **The mechanism switch**
 
 | Timescale | Dominant physics |
@@ -481,14 +574,66 @@ with tab4:
 | Monthly totals | **Humidity** — thermodynamics |
 | Flood-level days | **500 hPa circulation** — monsoon depressions |
 """)
-        st.markdown("<div class='takeaway'><i>Thermodynamics sets the stage; "
-                    "dynamics delivers the flood.</i></div>", unsafe_allow_html=True)
-    with r:
-        st.markdown("**Dominant driver of heavy-rain days (≥ 64.5 mm/day)**")
-        st.image(str(ROOT / "outputs/extremes/extreme_driver_map.png"),
-                 use_container_width=True)
-        card_caption("JJAS 2016–2023, SHAP on the daily classifier — circulation "
-                     "dominates the storm corridor across central and eastern India.")
+            st.markdown("<div class='takeaway'><i>Thermodynamics sets the stage; "
+                        "dynamics delivers the flood.</i></div>", unsafe_allow_html=True)
+        with r:
+            st.markdown("**Dominant driver of heavy-rain days (≥ 64.5 mm/day)**")
+            st.image(str(ROOT / "outputs/extremes/extreme_driver_map.png"),
+                     use_container_width=True)
+            card_caption("JJAS 2016–2023, SHAP on the daily classifier — circulation "
+                         "dominates the storm corridor across central and eastern India.")
+
+    else:  # ---- ETCCDI extreme-index explorer ----
+        iyrs = load_indices()["year"].values
+        iy0, iy1 = int(iyrs.min()), int(iyrs.max())
+        with st.container(border=True):
+            cc = st.columns([1.9, 2.0, 1.3], vertical_alignment="bottom")
+            idx = cc[0].selectbox("Extreme index", list(INDEX_META),
+                                  format_func=lambda k: INDEX_META[k][0])
+            vw = cc[1].radio("Map", [f"Climatology ({iy0}–{iy1} mean)", "Single year",
+                                     "Trend (per decade)"], horizontal=True)
+            yr_sel = cc[2].slider("Year", iy0, iy1, iy1, key="idx_year",
+                                  disabled=(vw != "Single year"))
+        view = ("Trend (per decade)" if vw.startswith("Trend")
+                else "Single year" if vw == "Single year" else "Climatology")
+        yr_arg = int(yr_sel) if view == "Single year" else 0
+
+        l, r = st.columns([1.4, 1], gap="medium")
+        with l:
+            show_map(render_index_png(idx, view, yr_arg), height=560, key="map_index")
+            note = ("blue = rising · red = falling per decade"
+                    if view == "Trend (per decade)"
+                    else "publication style · clipped to India · zoom / pan / download via toolbar")
+            card_caption(f"{INDEX_META[idx][3]}  ·  {note}")
+        with r:
+            tr = index_trends().loc[idx]
+            un = INDEX_META[idx][1]
+            m1, m2 = st.columns(2)
+            m1.metric("All-India mean", f"{tr['mean']:.0f} {un}")
+            sig = "significant (p<0.05)" if tr["p_value"] < 0.05 else "not significant"
+            m2.metric("Trend / decade", f"{tr['slope_per_decade']:+.2f}",
+                      help=f"OLS slope · p = {tr['p_value']:.3f} · {sig}")
+            st.markdown("**All-India annual trend**")
+            s = index_series()[idx]
+            yrs = s.index.values.astype(float)
+            b = np.polyfit(yrs, s.values, 1)
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=yrs, y=s.values, mode="lines+markers",
+                                     line=dict(color=PRIMARY, width=2),
+                                     marker=dict(size=4)))
+            fig.add_trace(go.Scatter(x=yrs, y=b[0] * yrs + b[1], mode="lines",
+                                     line=dict(color="#B45309", dash="dash")))
+            fig.update_layout(height=300, margin=dict(l=0, r=6, t=6, b=0),
+                              yaxis_title=un, showlegend=False,
+                              font=dict(family="Fira Sans", color=INK),
+                              paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF")
+            st.plotly_chart(fig, use_container_width=True,
+                            config={"displayModeBar": False}, key="idx_trend_line")
+        st.markdown("<div class='takeaway'><b>Reading:</b> wet-extreme indices (R95p, R99p) "
+                    "rise while wet spells (CWD) shorten — rainfall is concentrating into fewer, "
+                    "heavier bursts. All-India averages hide stronger regional signals: switch the "
+                    "map to <b>Trend (per decade)</b> to see where extremes are increasing.</div>",
+                    unsafe_allow_html=True)
 
 st.divider()
 st.markdown(f"<p style='font-size:0.8rem;color:{MUTED}'>All statistics computed on "

@@ -9,6 +9,7 @@ data
 data_cmip6/
 data_daily/
 outputs/predictions/test_predictions.parquet
+outputs/extremes/indices/etccdi_indices_annual.nc
 
 # large model binaries
 models/randomforest.pkl
