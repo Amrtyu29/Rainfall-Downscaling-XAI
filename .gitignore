@@ -13,3 +13,8 @@ outputs/extremes/indices/etccdi_indices_annual.nc
 
 # large model binaries
 models/randomforest.pkl
+
+# conference paper draft (kept local, not part of the public project)
+src/build_paper.py
+report/ACRS2026_Full_Paper.docx
+report/~$*.docx
